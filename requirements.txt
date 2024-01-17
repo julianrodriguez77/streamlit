@@ -93,10 +93,6 @@ tenacity==8.2.3
 tensorboard==2.8.0
 tensorboard-data-server==0.6.1
 tensorboard-plugin-wit==1.8.1
-tensorflow==2.8.0
-tensorflow-estimator==2.11.0
-tensorflow-intel==2.11.0
-tensorflow-io-gcs-filesystem==0.29.0
 termcolor==2.2.0
 tf-estimator-nightly==2.8.0.dev2021122109
 threadpoolctl==3.2.0
