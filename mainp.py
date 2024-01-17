@@ -1,54 +1,64 @@
 import streamlit as st
-import pandas as pd 
-#from st_aggrid import GridOptionsBuilder, AgGrid, GridUpdateMode, DataReturnMode, JsCode
-from st_aggrid.grid_options_builder import GridOptionsBuilder
-from st_aggrid.shared import GridUpdateMode, DataReturnMode, JsCode, walk_gridOptions, ColumnsAutoSizeMode, AgGridTheme, ExcelExportMode
+import pandas as pd
+from fpdf import FPDF
+from datetime import datetime
 
-#@st.cache(allow_output_mutation=True)
-def load_data():
-    df = pd.DataFrame({'fruit':['Apple', 'Banana'], 'unit_price':[50,25], 'num_units':[0,0], 'total_price':[0,0]})
-    return df
+# Crear el DataFrame en Streamlit
+data = {
+    'Columna 1': range(1, 21),
+    'Columna 2': range(21, 41),
+    'Columna 3': range(41, 61),
+    'Columna 4': range(61, 81),
+    'Columna 5': range(81, 101),
+    'Columna 6': range(101, 121),
+    'Columna 7': range(121, 141)
+}
 
-loaded_data = load_data()
+df = pd.DataFrame(data)
 
-num_units = st.slider('Select Number of Units', 0, 130, 1)
-loaded_data['num_units'] = num_units
+# Mostrar el DataFrame en Streamlit
+st.dataframe(df)
 
-js_calculate_total = JsCode("""
+# Generar PDF con el DataFrame y fecha/hora como título
+pdf = FPDF()
+pdf.set_auto_page_break(auto=True, margin=15)
+pdf.add_page()
 
-    function (params) {
-        
-         var unit_price = params.data.unit_price;
-         var num_units = params.data.num_units;
-         return (unit_price * num_units).toLocaleString(undefined, {minimumFractionDigits: 0, maximumFractionDigits: 0});
+# Obtener fecha y hora actual para el título
+now = datetime.now()
+fecha_hora = now.strftime("%Y-%m-%d %H")
 
-    }
+pdf.set_title(f"DataFrame - {fecha_hora}")
 
-""")
+# Escribir el título en el PDF
+pdf.set_font("Arial", 'B', 16)
+pdf.cell(200, 10, txt=f"DataFrame - {fecha_hora}", ln=True, align="C")
+pdf.ln(10)
 
-gb = GridOptionsBuilder.from_dataframe(loaded_data) #Infer basic colDefs from dataframe types
-# Grid Builder configurations
-gb.configure_default_column(groupable=True, value=True, enableRowGroup=True, aggFunc='sum', editable=False)
-# Below, the first parameters are all the same as in the load_data dateframe, but the "header_name" is what is displayed and can be anything 
-gb.configure_column("fruit", header_name='Fruit', pivot=True, sort='asc')
-gb.configure_column("unit_price", header_name='Unit Price', sort='desc', type=["numericColumn","numberColumnFilter"], valueFormatter="data.estimatednotional_usd.toLocaleString(undefined, {minimumFractionDigits: 0, maximumFractionDigits: 0})", aggFunc='sum') # defines numeric column
-gb.configure_column("total_price", header_name='Total Price', type=["numericColumn","numberColumnFilter"], editable=False, valueGetter=js_calculate_total) # uses custom value getter for calculated column
-gridOptions = gb.build()
-                            
-grid_response = AgGrid(
-        loaded_data,
-        gridOptions = gridOptions,
-        height=200,
-        width='100%', # how much of the Streamlit page width this grid takes up
-        update_mode=GridUpdateMode.MODEL_CHANGED,
-        fit_columns_on_grid_load=True, # automatically fits all columns to be displayed in the grid in one view (doesn't always seem to work)
-        allow_unsafe_jscode=True, # Set to True to allow the Javascript code to be injected
-        enable_enterprise_modules=True, # enables right click and fancy features - can add license key as another parameter (license_key='string') if you have one
-        key='select_grid', # stops grid from re-initialising every time the script is run
-        reload_data=True # allows modifications to loaded_data to update this same grid entity
-        #theme='light'
-        )
+# Obtener anchos de columna dinámicos basados en el contenido
+col_widths = []
+for col in df.columns:
+    col_widths.append(pdf.get_string_width(col) -2 )  # Ancho de cada columna basado en el encabezado
 
-st.write(grid_response['data'])
-st.write(gridOptions.get('columnDefs'))
-st.write(gridOptions.get('defaultColDef'))
+for _, row in df.iterrows():
+    for i, value in enumerate(row):
+        cell_width = pdf.get_string_width(str(value)) -2   # Ancho de celda basado en el contenido
+        if cell_width > col_widths[i]:
+            col_widths[i] = cell_width  # Si el ancho de la celda es mayor, ajustar el ancho de columna
+
+# Agregar el DataFrame al PDF con líneas de tabla y celdas ajustadas al contenido
+pdf.set_font("Arial", size=10)
+for i, col in enumerate(df.columns):
+    pdf.cell(col_widths[i], 10, str(col), border=1, align='C')
+pdf.ln()
+
+pdf.set_font("Arial", size=8)
+for _, row in df.iterrows():
+    for i, value in enumerate(row):
+        pdf.cell(col_widths[i], 10, str(value), border=1, align='C')
+    pdf.ln()
+
+# Guardar el PDF
+pdf_output = f"DataFrame_{fecha_hora}.pdf"
+pdf.output(pdf_output)
+st.success(f"Se ha generado el PDF: {pdf_output}")
