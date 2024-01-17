@@ -1,8 +1,8 @@
-import subprocess
-subprocess.run(["pip", "install", "-r", "requirements.txt"], check=True)
 import streamlit as st
 import pandas as pd 
 #from st_aggrid import GridOptionsBuilder, AgGrid, GridUpdateMode, DataReturnMode, JsCode
+from st_aggrid.grid_options_builder import GridOptionsBuilder
+from st_aggrid.shared import GridUpdateMode, DataReturnMode, JsCode, walk_gridOptions, ColumnsAutoSizeMode, AgGridTheme, ExcelExportMode
 
 #@st.cache(allow_output_mutation=True)
 def load_data():
