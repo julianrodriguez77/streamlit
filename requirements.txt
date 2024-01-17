@@ -1,1 +1,8 @@
-
+numpy
+pandas
+streamlit
+streamlit-option-menu
+tensorflow
+split-folders
+fpdf
+datetime
