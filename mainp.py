@@ -4,11 +4,14 @@ from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import letter
 from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph
+from io import BytesIO
 
 # Función para exportar DataFrame a PDF
-def export_to_pdf(df, filename):
+def export_to_pdf(df):
+    # Crear un objeto BytesIO para almacenar el PDF
+    pdf_buffer = BytesIO()
     # Crear un objeto SimpleDocTemplate para el PDF
-    doc = SimpleDocTemplate(filename, pagesize=letter)
+    doc = SimpleDocTemplate(pdf_buffer, pagesize=letter)
     # Obtener estilos de texto predefinidos
     styles = getSampleStyleSheet()
 
@@ -39,11 +42,18 @@ def export_to_pdf(df, filename):
     # Construir el PDF con la tabla
     doc.build([table])
 
+    # Obtener el contenido del BytesIO
+    pdf_content = pdf_buffer.getvalue()
+    # Cerrar el BytesIO
+    pdf_buffer.close()
+
+    return pdf_content
+
 # Crear datos de ejemplo
 data = {
-    'Nombre': ['Carlos con un texto muy largo que necesita ser dividido en varias líneas','Carlos con un texto muy largo que necesita ser dividido en varias líneas', 'Carlos con un texto muy largo que necesita ser dividido en varias líneas'],
+    'Nombre': ['Juan', 'María', 'Carlos con un texto muy largo que necesita ser dividido en varias líneas'],
     'Edad': [25, 30, 22],
-    'Ciudad': ['Ciudad A', 'Ciudad B', 'Ciudad C Línea adicional Otra línea']
+    'Ciudad': ['Ciudad A', 'Ciudad B', 'Ciudad C\nLínea adicional\nOtra línea']
 }
 
 # Crear DataFrame a partir de los datos
@@ -55,11 +65,11 @@ st.title('Tabla Exportable a PDF')
 # Mostrar la tabla en Streamlit
 st.table(df)
 
-# Botón para exportar a PDF
-if st.button('Exportar a PDF'):
-    # Nombre del archivo PDF a generar
-    pdf_filename = 'tabla_exportada.pdf'
+# Botón para exportar a PDF y descargar
+if st.button('Exportar a PDF y Descargar'):
     # Llamar a la función para exportar DataFrame a PDF
-    export_to_pdf(df, pdf_filename)
+    pdf_content = export_to_pdf(df)
+    # Descargar el PDF
+    st.download_button('Descargar PDF', pdf_content, file_name='tabla_exportada.pdf', key='download_button')
     # Mensaje de éxito
-    st.success(f'Tabla exportada exitosamente como {pdf_filename}')
+    st.success('Tabla exportada y PDF descargado exitosamente.')
