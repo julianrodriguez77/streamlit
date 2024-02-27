@@ -1,64 +1,65 @@
 import streamlit as st
 import pandas as pd
-from fpdf import FPDF
-from datetime import datetime
+from reportlab.pdfgen import canvas
+from reportlab.lib.pagesizes import letter
+from reportlab.lib.styles import getSampleStyleSheet
+from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph
 
-# Crear el DataFrame en Streamlit
+# Función para exportar DataFrame a PDF
+def export_to_pdf(df, filename):
+    # Crear un objeto SimpleDocTemplate para el PDF
+    doc = SimpleDocTemplate(filename, pagesize=letter)
+    # Obtener estilos de texto predefinidos
+    styles = getSampleStyleSheet()
+
+    # Convertir DataFrame a lista de listas para la tabla
+    data = [df.columns.tolist()]  # Agregar una fila con los nombres de las variables
+
+    for i, row in df.iterrows():
+        # Contador de texto para la primera columna
+        first_col_text = str(row[df.columns[0]])
+        # Agregar \n cada 20 letras
+        first_col_text = '\n'.join([first_col_text[j:j+20] for j in range(0, len(first_col_text), 20)])
+        
+        row_data = [first_col_text] + [str(row[col]) for col in df.columns[1:]]
+        data.append(row_data)
+
+    # Crear la tabla con los datos del DataFrame
+    table = Table(data, repeatRows=1)
+
+    # Establecer estilos para la tabla
+    table.setStyle(TableStyle([
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),  # Alinear el contenido al centro
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),  # Fuente en negrita para la primera fila (encabezado)
+        ('BOTTOMPADDING', (0, 0), (-1, 0), 12),  # Agregar espacio inferior a la primera fila
+        ('GRID', (0, 0), (-1, -1), 1, 'black'),  # Agregar bordes a la tabla
+        ('SPACEAFTER', (0, 0), (-1, -1), 6)  # Espacio después de cada fila
+    ]))
+
+    # Construir el PDF con la tabla
+    doc.build([table])
+
+# Crear datos de ejemplo
 data = {
-    'Columna 1': range(1, 21),
-    'Columna 2': range(21, 41),
-    'Columna 3': range(41, 61),
-    'Columna 4': range(61, 81),
-    'Columna 5': range(81, 101),
-    'Columna 6': range(101, 121),
-    'Columna 7': range(121, 141)
+    'Nombre': ['Carlos con un texto muy largo que necesita ser dividido en varias líneas','Carlos con un texto muy largo que necesita ser dividido en varias líneas', 'Carlos con un texto muy largo que necesita ser dividido en varias líneas'],
+    'Edad': [25, 30, 22],
+    'Ciudad': ['Ciudad A', 'Ciudad B', 'Ciudad C Línea adicional Otra línea']
 }
 
+# Crear DataFrame a partir de los datos
 df = pd.DataFrame(data)
 
-# Mostrar el DataFrame en Streamlit
-st.dataframe(df)
+# Configurar Streamlit
+st.title('Tabla Exportable a PDF')
 
-# Generar PDF con el DataFrame y fecha/hora como título
-pdf = FPDF()
-pdf.set_auto_page_break(auto=True, margin=15)
-pdf.add_page()
+# Mostrar la tabla en Streamlit
+st.table(df)
 
-# Obtener fecha y hora actual para el título
-now = datetime.now()
-fecha_hora = now.strftime("%Y-%m-%d %H")
-
-pdf.set_title(f"DataFrame - {fecha_hora}")
-
-# Escribir el título en el PDF
-pdf.set_font("Arial", 'B', 16)
-pdf.cell(200, 10, txt=f"DataFrame - {fecha_hora}", ln=True, align="C")
-pdf.ln(10)
-
-# Obtener anchos de columna dinámicos basados en el contenido
-col_widths = []
-for col in df.columns:
-    col_widths.append(pdf.get_string_width(col) -2 )  # Ancho de cada columna basado en el encabezado
-
-for _, row in df.iterrows():
-    for i, value in enumerate(row):
-        cell_width = pdf.get_string_width(str(value)) -2   # Ancho de celda basado en el contenido
-        if cell_width > col_widths[i]:
-            col_widths[i] = cell_width  # Si el ancho de la celda es mayor, ajustar el ancho de columna
-
-# Agregar el DataFrame al PDF con líneas de tabla y celdas ajustadas al contenido
-pdf.set_font("Arial", size=10)
-for i, col in enumerate(df.columns):
-    pdf.cell(col_widths[i], 10, str(col), border=1, align='C')
-pdf.ln()
-
-pdf.set_font("Arial", size=8)
-for _, row in df.iterrows():
-    for i, value in enumerate(row):
-        pdf.cell(col_widths[i], 10, str(value), border=1, align='C')
-    pdf.ln()
-
-# Guardar el PDF
-pdf_output = f"DataFrame_{fecha_hora}.pdf"
-pdf.output(pdf_output)
-st.success(f"Se ha generado el PDF: {pdf_output}")
+# Botón para exportar a PDF
+if st.button('Exportar a PDF'):
+    # Nombre del archivo PDF a generar
+    pdf_filename = 'tabla_exportada.pdf'
+    # Llamar a la función para exportar DataFrame a PDF
+    export_to_pdf(df, pdf_filename)
+    # Mensaje de éxito
+    st.success(f'Tabla exportada exitosamente como {pdf_filename}')
