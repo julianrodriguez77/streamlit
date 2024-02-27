@@ -6,3 +6,4 @@ tensorflow
 split-folders
 fpdf
 datetime
+streamlit pandas reportlab
