@@ -1,13 +1,8 @@
 import os
-import gspread
 import streamlit as st
 import pandas as pd
 from st_aggrid import JsCode, AgGrid, GridOptionsBuilder,GridUpdateMode, DataReturnMode,ColumnsAutoSizeMode
-import matplotlib.pyplot as plt
-from fpdf import FPDF
 import base64
-import numpy as np
-from tempfile import NamedTemporaryFile
 from datetime import datetime
 import hydralit_components as hc
 from PIL import Image
